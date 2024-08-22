@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Mapping App</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        form {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Report Water Infrastructure Issues</h1>
+    <div id="map"></div>
+    <form id="report-form">
+        <label for="description">Description:</label><br>
+        <textarea id="description" name="description" required></textarea><br><br>
+        <label for="photo">Attach a photo:</label><br>
+        <input type="file" id="photo" name="photo" accept="image/*" required><br><br>
+        <input type="hidden" id="location" name="location">
+        <button type="submit">Submit Report</button>
+    </form>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([37.6, 14.0154], 8);
+
+        // Load tiles from OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Fetch and display existing reports
+        fetch('/api/reports')
+            .then(response => response.json())
+            .then(reports => {
+                reports.forEach(report => {
+                    const [longitude, latitude] = report.location;
+                    const marker = L.marker([latitude, longitude]).addTo(map);
+                    marker.bindPopup(`
+                        <strong>Description:</strong> ${report.description}<br>
+                        <img src="${report.imageUrl}" style="width:200px;">
+                    `);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching reports:', error);
+            });
+
+        // Event listener for map clicks
+        var marker;
+        map.on('click', function(e) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker(e.latlng).addTo(map);
+            document.getElementById('location').value = e.latlng.lat + ',' + e.latlng.lng;
+        });
+
+        // Form submission
+        document.getElementById('report-form').onsubmit = function(e) {
+            e.preventDefault();  // Prevent the form from submitting the normal way
+            var formData = new FormData(this);  // Create a FormData object with the form data
+
+            // Use fetch to send the form data to the backend API
+            fetch('/api/reports', {
+                method: 'POST',  // HTTP method
+                body: formData   // Send the form data
+            })
+            .then(response => response.json())  // Parse the JSON response
+            .then(data => {
+                console.log('Success:', data);  // Log the success message
+                alert('Report submitted successfully!');  // Show a success message
+
+                // Add the marker to the map immediately
+                const [latitude, longitude] = data.report.location;
+                const newMarker = L.marker([latitude, longitude]).addTo(map);
+                newMarker.bindPopup(`
+                    <strong>Description:</strong> ${data.report.description}<br>
+                    <img src="${data.report.imageUrl}" style="width:200px;">
+                `);
+            })
+            .catch(error => {
+                console.error('Error:', error);  // Log any errors
+            });
+        };
+    </script>
+</body>
+</html>

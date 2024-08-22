@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "express": "^4.19.2",
-    "multer": "^1.4.5-lts.1"
+    "knex": "^3.1.0",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.12.0"
   },
   "name": "social-mapping-app",
   "version": "1.0.0",
