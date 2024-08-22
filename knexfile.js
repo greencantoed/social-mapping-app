@@ -12,4 +12,18 @@ module.exports = {
     },
     useNullAsDefault: true,
   },
+
+  production: {
+    client: 'pg',
+    connection: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,  // Important for Heroku, which enforces SSL
+      },
+    },
+    migrations: {
+      directory: './migrations',
+    },
+    useNullAsDefault: true,
+  },
 };
